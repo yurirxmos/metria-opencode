@@ -1,0 +1,56 @@
+{
+  "name": "metria-opencode",
+  "version": "0.1.0",
+  "description": "OpenCode V2 CLI plugin that shows the current AI provider usage (Claude, Codex, OpenCode Go) in the prompt footer, powered by Metria's usage logic.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yurirxmos/metria-opencode.git"
+  },
+  "homepage": "https://github.com/yurirxmos/metria-opencode#readme",
+  "bugs": {
+    "url": "https://github.com/yurirxmos/metria-opencode/issues"
+  },
+  "author": "yurirxmos",
+  "exports": {
+    "./tui": "./tui.tsx"
+  },
+  "files": [
+    "src",
+    "tui.tsx",
+    "README.md"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "metria",
+    "usage",
+    "claude",
+    "codex"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.1.2"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.6.6",
+    "@opentui/solid": ">=0.6.6",
+    "solid-js": ">=1.9.0"
+  },
+  "devDependencies": {
+    "@opencode/theme": "2.1.2",
+    "@opentui/core": "^0.6.6",
+    "@opentui/solid": "^0.6.6",
+    "@types/node": "^22.0.0",
+    "solid-js": "^1.9.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.0.0"
+  }
+}
