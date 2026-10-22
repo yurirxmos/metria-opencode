@@ -24,13 +24,14 @@ export async function fetchOpenCodeGoUsage(source?: CredentialSource): Promise<U
 		source?.get("opencode"),
 		readJson(paths.openCodeAuth),
 	]);
-	// A API key legada do opencode-go expira sozinha; o token do OpenCode Console
-	// continua válido e responde o mesmo endpoint, então serve de fallback.
+	// O provider é autenticado pelo OAuth do OpenCode Console, não pela API key
+	// legada de opencode-go (que expira sozinha). Por isso o token do Console vem
+	// primeiro; a key fica como último recurso.
 	const tokens: (string | undefined)[] = [
-		serverKey?.key,
 		serverConsole?.access,
-		openCode?.["opencode-go"]?.key,
+		serverKey?.key,
 		openCode?.opencode?.access,
+		openCode?.["opencode-go"]?.key,
 	];
 	return firstSuccessful(
 		tokens,

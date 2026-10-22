@@ -94,7 +94,7 @@ export function friendlyError(kind: ProviderKind, error: unknown): string {
 			case "Codex":
 				return "Credenciais do Codex expiradas. Faça login de novo no Codex.";
 			case "OpenCode Go":
-				return "API key do OpenCode Go expirada. Gere uma nova key no OpenCode Console e rode `opencode auth login`.";
+				return "Sem credencial válida do OpenCode Go. Entre no OpenCode Console com `opencode auth login`.";
 		}
 	}
 	return error instanceof Error ? error.message : String(error);
