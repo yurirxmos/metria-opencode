@@ -10,11 +10,13 @@ Plugin de CLI do OpenCode V2 que mostra o uso da IA atual no fim da linha do pro
 
 | Provider no OpenCode | Fonte |
 | --- | --- |
-| `anthropic` | credential do servidor OpenCode ou `~/.claude/.credentials.json` → `api.anthropic.com/api/oauth/usage` |
+| `anthropic` | credential do servidor OpenCode, Keychain do macOS (`Claude Code-credentials`) ou `~/.claude/.credentials.json` → `api.anthropic.com/api/oauth/usage` |
 | `openai` | credential do servidor OpenCode ou `~/.codex/auth.json` → `chatgpt.com/backend-api/wham/usage` |
-| `opencode-go` | credential do servidor OpenCode (ou `OPENCODE_API_KEY`/`auth.json`) → `opencode.ai/zen/go/v1/usage` |
+| `opencode-go` | OAuth do OpenCode Console (ou API key de `opencode-go`/`auth.json`) → `opencode.ai/zen/go/v1/usage` |
 
 As credenciais vêm primeiro do servidor do OpenCode, então uma key trocada pela interface (`opencode auth login`, `/connect`, Console) é usada na hora — o `auth.json` só serve de reserva.
+
+No macOS o Claude Code guarda o OAuth no Keychain, e o provider `opencode-go` é autenticado pelo OAuth do Console (a API key avulsa expira sozinha) — o plugin tenta as fontes nessa ordem.
 
 Quando o token do OpenAI/Codex estiver expirado, o plugin renova sozinho pelo `auth.openai.com/oauth/token` (mesmo fluxo do Codex CLI), sem alterar os arquivos de credencial.
 
