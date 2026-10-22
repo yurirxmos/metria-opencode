@@ -1,5 +1,5 @@
 /** Integration IDs that Metria knows how to read usage for. */
-export type IntegrationID = "openai" | "anthropic" | "opencode-go";
+export type IntegrationID = "openai" | "anthropic" | "opencode-go" | "opencode";
 
 export interface CredentialSource {
 	/** Returns the active credential value for an integration, when available. */

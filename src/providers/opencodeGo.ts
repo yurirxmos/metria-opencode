@@ -1,6 +1,8 @@
 import type { CredentialSource } from "../credentials.ts";
-import { percent, readJson, requestJson, type UsageWindow } from "../http.ts";
+import { firstSuccessful, percent, readJson, requestJson, type UsageWindow } from "../http.ts";
 import { paths } from "../paths.ts";
+
+const USAGE_URL = "https://opencode.ai/zen/go/v1/usage";
 
 export function parseOpenCodeGoUsage(data: any): UsageWindow[] {
 	const windows: [string, string, string][] = [
@@ -17,10 +19,22 @@ export function parseOpenCodeGoUsage(data: any): UsageWindow[] {
 }
 
 export async function fetchOpenCodeGoUsage(source?: CredentialSource): Promise<UsageWindow[]> {
-	const fromServer = await source?.get("opencode-go");
-	const key: string | undefined = fromServer?.key ?? (await readJson(paths.openCodeAuth))?.["opencode-go"]?.key;
-	if (!key) throw new Error("OpenCode Go credentials not found.");
-	return parseOpenCodeGoUsage(
-		await requestJson("https://opencode.ai/zen/go/v1/usage", { Authorization: `Bearer ${key}` }),
+	const [serverKey, serverConsole, openCode] = await Promise.all([
+		source?.get("opencode-go"),
+		source?.get("opencode"),
+		readJson(paths.openCodeAuth),
+	]);
+	// A API key legada do opencode-go expira sozinha; o token do OpenCode Console
+	// continua válido e responde o mesmo endpoint, então serve de fallback.
+	const tokens: (string | undefined)[] = [
+		serverKey?.key,
+		serverConsole?.access,
+		openCode?.["opencode-go"]?.key,
+		openCode?.opencode?.access,
+	];
+	return firstSuccessful(
+		tokens,
+		async (token) => parseOpenCodeGoUsage(await requestJson(USAGE_URL, { Authorization: `Bearer ${token}` })),
+		"OpenCode Go credentials not found.",
 	);
 }

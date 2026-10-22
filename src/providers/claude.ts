@@ -1,6 +1,9 @@
 import type { CredentialSource } from "../credentials.ts";
 import { firstSuccessful, percent, readJson, requestJson, type UsageWindow } from "../http.ts";
+import { readKeychainJson } from "../keychain.ts";
 import { paths } from "../paths.ts";
+
+const KEYCHAIN_SERVICE = "Claude Code-credentials";
 
 type Limit = { utilization?: number; resets_at?: string } | null | undefined;
 
@@ -17,13 +20,15 @@ export function parseClaudeUsage(data: any): UsageWindow[] {
 }
 
 export async function fetchClaudeUsage(source?: CredentialSource): Promise<UsageWindow[]> {
-	const [server, claude, openCode] = await Promise.all([
+	const [server, keychain, claude, openCode] = await Promise.all([
 		source?.get("anthropic"),
+		readKeychainJson(KEYCHAIN_SERVICE),
 		readJson(paths.claudeCredentials),
 		readJson(paths.openCodeAuth),
 	]);
 	const tokens: (string | undefined)[] = [
 		server?.access,
+		keychain?.claudeAiOauth?.accessToken,
 		claude?.claudeAiOauth?.accessToken,
 		openCode?.anthropic?.access,
 	];
