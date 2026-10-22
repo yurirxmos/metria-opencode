@@ -84,15 +84,20 @@ async function fetchWithCredential(credentials: Credentials): Promise<UsageWindo
 	}
 }
 
-export async function fetchCodexUsage(source?: CredentialSource): Promise<UsageWindow[]> {
+/** Credenciais do Codex na ordem de tentativa: servidor, auth.json do OpenCode e do Codex CLI. */
+export async function codexCredentials(source?: CredentialSource): Promise<Credentials[]> {
 	const [server, openCode, codex] = await Promise.all([
 		source?.get("openai"),
 		readJson(paths.openCodeAuth),
 		readJson(paths.codexAuth),
 	]);
-	const candidates = [parseServerAuth(server), parseCodexAuth(openCode), parseCodexAuth(codex)].filter(
+	return [parseServerAuth(server), parseCodexAuth(openCode), parseCodexAuth(codex)].filter(
 		(candidate): candidate is Credentials => candidate !== undefined,
 	);
+}
+
+export async function fetchCodexUsage(source?: CredentialSource): Promise<UsageWindow[]> {
+	const candidates = await codexCredentials(source);
 	if (candidates.length === 0) throw new Error("Codex credentials not found. Sign in with OpenCode or Codex.");
 
 	let lastError: unknown;

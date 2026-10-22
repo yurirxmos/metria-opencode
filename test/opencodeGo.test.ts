@@ -18,13 +18,13 @@ function stubFetch() {
 	return sent;
 }
 
-describe("credenciais do OpenCode Go", () => {
+describe("OpenCode Go credentials", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
 	});
 
 	// Regressão: o provider usa o OAuth do Console; a API key de opencode-go expira sozinha.
-	it("prefere o token do OpenCode Console à API key de opencode-go", async () => {
+	it("prefers the OpenCode Console token over the opencode-go API key", async () => {
 		const sent = stubFetch();
 		const windows = await fetchOpenCodeGoUsage(
 			sourceGiven({
@@ -36,7 +36,7 @@ describe("credenciais do OpenCode Go", () => {
 		expect(windows.map((window) => window.label)).toEqual(["5h", "7d", "30d"]);
 	});
 
-	it("cai para a API key quando o Console não está disponível", async () => {
+	it("falls back to the API key when the Console is unavailable", async () => {
 		const sent = stubFetch();
 		await fetchOpenCodeGoUsage(sourceGiven({ "opencode-go": { type: "key", key: "only-key" } }));
 		expect(sent).toEqual(["Bearer only-key"]);

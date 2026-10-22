@@ -6,14 +6,15 @@ import { Plugin } from "@opencode/plugin/tui";
 import { Show, createMemo, createSignal } from "solid-js";
 
 import { serverCredentials } from "./credentials.ts";
+import { detectProviders, unmeasuredIntegrations } from "./detection.ts";
 import type { UsageWindow } from "./http.ts";
+import { UsageDialog } from "./UsageDialog.tsx";
 import {
 	type Level,
 	type ProviderKind,
 	EXCEEDED_THRESHOLD,
 	fetchUsage,
 	formatPercent,
-	formatReset,
 	friendlyError,
 	level,
 	providerKind,
@@ -44,7 +45,7 @@ export default Plugin.define({
 
 		const currentKind = () => providerKind(context.ui.model.current()?.providerID);
 
-		function refresh(kind: ProviderKind | undefined, force = false): Promise<void> {
+		function refresh(kind: ProviderKind | undefined, force = false, notify = true): Promise<void> {
 			if (!kind) return Promise.resolve();
 			const pending = inFlight.get(kind);
 			if (pending) return pending;
@@ -63,7 +64,7 @@ export default Plugin.define({
 					updateState((draft) => {
 						draft[kind] = { ...result, fetchedAt: Date.now() };
 					});
-					if (result.error && !notified.has(kind)) {
+					if (notify && result.error && !notified.has(kind)) {
 						notified.add(kind);
 						context.ui.toast.show({
 							title: `Metria · ${kind}`,
@@ -137,27 +138,50 @@ export default Plugin.define({
 			);
 		}
 
-		async function showDetails() {
-			const kind = currentKind();
-			if (!kind) {
+		const dialogColors: Record<Level, string> = {
+			ok: color("ok"),
+			low: color("low"),
+			medium: color("medium"),
+			high: color("high"),
+			exceeded: color("exceeded"),
+		};
+		const [otherProviders, setOtherProviders] = createSignal<string[]>([]);
+
+		async function loadOtherProviders() {
+			try {
+				setOtherProviders(unmeasuredIntegrations(await context.client.credential.list()));
+			} catch {
+				setOtherProviders([]);
+			}
+		}
+
+		async function showUsage() {
+			const providers = await detectProviders(credentials);
+			if (providers.length === 0) {
 				context.ui.toast.show({
 					title: "Metria",
-					message: "O provider atual não é suportado (Claude, Codex ou OpenCode Go).",
+					message: "No provider with credentials found (Claude, Codex or OpenCode Go).",
 					variant: "warning",
 				});
 				return;
 			}
-			await refresh(kind, true);
-			const entry = state[kind];
-			const lines = (entry?.windows ?? []).map((window) => {
-				const reset = formatReset(window.resetDate);
-				return `${window.title}: ${formatPercent(window.percent)}${reset ? ` (reseta em ${reset})` : ""}`;
-			});
-			if (entry?.error) lines.push("", `Erro: ${entry.error}`);
-			await context.ui.dialog.alert({
-				title: `Metria · ${kind}`,
-				message: lines.length ? lines.join("\n") : "Nenhum dado de uso encontrado.",
-			});
+
+			void loadOtherProviders();
+			context.ui.dialog.show(() => (
+				<UsageDialog
+					providers={providers}
+					others={otherProviders}
+					current={currentKind}
+					entry={(kind) => state[kind]}
+					now={() => now()}
+					colors={dialogColors}
+					text={context.theme.text.base}
+					muted={context.theme.text.muted}
+					faint={context.theme.text.faint}
+				/>
+			));
+			// Sem toast aqui: cada provider já mostra o próprio erro dentro da janela.
+			await Promise.allSettled(providers.map((kind) => refresh(kind, true, false)));
 		}
 
 		context.keymap.layer(() => ({
@@ -165,12 +189,12 @@ export default Plugin.define({
 			commands: [
 				{
 					id: "metria.usage",
-					title: "Mostrar uso da IA atual",
+					title: "Show usage for all providers",
 					group: "Metria",
 					palette: true,
 					slash: { name: "usage", aliases: ["metria"] },
 					run: () => {
-						void showDetails();
+						void showUsage();
 					},
 				},
 			],

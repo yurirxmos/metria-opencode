@@ -19,7 +19,8 @@ export function parseClaudeUsage(data: any): UsageWindow[] {
 	);
 }
 
-export async function fetchClaudeUsage(source?: CredentialSource): Promise<UsageWindow[]> {
+/** Tokens do Claude na ordem em que devem ser tentados, incluindo o Keychain do macOS. */
+export async function claudeTokens(source?: CredentialSource): Promise<string[]> {
 	const [server, keychain, claude, openCode] = await Promise.all([
 		source?.get("anthropic"),
 		readKeychainJson(KEYCHAIN_SERVICE),
@@ -32,6 +33,11 @@ export async function fetchClaudeUsage(source?: CredentialSource): Promise<Usage
 		claude?.claudeAiOauth?.accessToken,
 		openCode?.anthropic?.access,
 	];
+	return tokens.filter((token): token is string => typeof token === "string" && token.length > 0);
+}
+
+export async function fetchClaudeUsage(source?: CredentialSource): Promise<UsageWindow[]> {
+	const tokens = await claudeTokens(source);
 	return firstSuccessful(
 		tokens,
 		async (token) =>

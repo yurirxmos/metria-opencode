@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parseClaudeUsage } from "../src/providers/claude.ts";
 import { parseCodexAuth, parseCodexUsage } from "../src/providers/codex.ts";
 import { parseOpenCodeGoUsage } from "../src/providers/opencodeGo.ts";
-import { formatReset, level, providerKind, resetLabel, summarize } from "../src/usage.ts";
+import { formatReset, level, providerKind, resetLabel, summarize, usageBar } from "../src/usage.ts";
 
 describe("parsers", () => {
 	it("parses Claude windows, primary first", () => {
@@ -71,5 +71,18 @@ describe("summary", () => {
 		expect(resetLabel(window(100, 90), 0)).toBe("resets in 1h30m");
 		expect(resetLabel(window(100, 0), 0)).toBe("resets in now");
 		expect(resetLabel({ ...window(100, 90), resetDate: null }, 0)).toBe("");
+	});
+});
+
+describe("usage bar", () => {
+	it("fills proportionally to the percentage", () => {
+		expect(usageBar(0, 10)).toBe("░".repeat(10));
+		expect(usageBar(50, 10)).toBe(`${"█".repeat(5)}${"░".repeat(5)}`);
+		expect(usageBar(100, 10)).toBe("█".repeat(10));
+	});
+
+	it("clamps values outside 0-100", () => {
+		expect(usageBar(-20, 4)).toBe("░".repeat(4));
+		expect(usageBar(180, 4)).toBe("█".repeat(4));
 	});
 });

@@ -18,21 +18,26 @@ export function parseOpenCodeGoUsage(data: any): UsageWindow[] {
 	});
 }
 
-export async function fetchOpenCodeGoUsage(source?: CredentialSource): Promise<UsageWindow[]> {
+/** Tokens do OpenCode Go: o OAuth do Console vem primeiro, a API key é o último recurso. */
+export async function openCodeGoTokens(source?: CredentialSource): Promise<string[]> {
 	const [serverKey, serverConsole, openCode] = await Promise.all([
 		source?.get("opencode-go"),
 		source?.get("opencode"),
 		readJson(paths.openCodeAuth),
 	]);
 	// O provider é autenticado pelo OAuth do OpenCode Console, não pela API key
-	// legada de opencode-go (que expira sozinha). Por isso o token do Console vem
-	// primeiro; a key fica como último recurso.
+	// legada de opencode-go (que expira sozinha).
 	const tokens: (string | undefined)[] = [
 		serverConsole?.access,
 		serverKey?.key,
 		openCode?.opencode?.access,
 		openCode?.["opencode-go"]?.key,
 	];
+	return tokens.filter((token): token is string => typeof token === "string" && token.length > 0);
+}
+
+export async function fetchOpenCodeGoUsage(source?: CredentialSource): Promise<UsageWindow[]> {
+	const tokens = await openCodeGoTokens(source);
 	return firstSuccessful(
 		tokens,
 		async (token) => parseOpenCodeGoUsage(await requestJson(USAGE_URL, { Authorization: `Bearer ${token}` })),

@@ -64,6 +64,13 @@ export function formatPercent(percent: number): string {
 
 export const EXCEEDED_THRESHOLD = 100;
 
+/** Barra de progresso em blocos, usada na janela de uso. */
+export function usageBar(percent: number, width = 14): string {
+	const ratio = Math.max(0, Math.min(100, percent)) / 100;
+	const filled = Math.round(ratio * width);
+	return "█".repeat(filled) + "░".repeat(width - filled);
+}
+
 export function formatReset(resetDate: string | null, now = Date.now()): string {
 	if (!resetDate) return "";
 	const ms = new Date(resetDate).getTime() - now;
@@ -90,11 +97,11 @@ export function friendlyError(kind: ProviderKind, error: unknown): string {
 	if (status === 401 || status === 403) {
 		switch (kind) {
 			case "Claude":
-				return "Credenciais do Claude expiradas. Rode `claude auth login`.";
+				return "Claude credentials expired. Run `claude auth login`.";
 			case "Codex":
-				return "Credenciais do Codex expiradas. Faça login de novo no Codex.";
+				return "Codex credentials expired. Sign in again to Codex.";
 			case "OpenCode Go":
-				return "Sem credencial válida do OpenCode Go. Entre no OpenCode Console com `opencode auth login`.";
+				return "No valid OpenCode Go credential. Sign in to the OpenCode Console with `opencode auth login`.";
 		}
 	}
 	return error instanceof Error ? error.message : String(error);
