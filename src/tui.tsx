@@ -1,3 +1,7 @@
+/** @jsxImportSource @opentui/solid */
+// Pragma por arquivo: evita depender da descoberta do tsconfig.json em tempo de execução
+// (o pacote publicado pode não incluir o tsconfig.json), garantindo que o JSX use o
+// runtime do Solid/OpenTUI em vez de cair no runtime padrão do React.
 import { Plugin } from "@opencode/plugin/tui";
 import { Show, createMemo, createSignal } from "solid-js";
 
