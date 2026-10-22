@@ -6,7 +6,7 @@ OpenCode V2 CLI plugin that shows the current AI provider usage in the prompt fo
 - If another window (weekly/monthly) goes past 85%, shows `▲ 7d 91%` next to it; at 100% it turns red.
 - When a limit is hit (100%), shows the time until reset: `5h 100% · resets in 1h30m`. The counter refreshes on its own and, when it reaches zero, usage is fetched again.
 - If measurement fails (expired credential, network), shows `usage !` in the footer and a toast explains why.
-- `/usage` (or `/metria`) opens a window with the usage of **all** providers the plugin detected (Claude, Codex and OpenCode Go), with a bar per window, color by threshold and time until reset. Connected providers the plugin doesn't measure are listed on a separate line.
+- `/usage` (or `/metria`) opens a window with the usage of **all** providers the plugin detected (Claude, Codex and OpenCode Go), with a bar per window, color by threshold and time until reset. Providers without a known quota endpoint show their **OpenCode usage** instead (tokens in/out and cost per window, from `session.stats`).
 
 | OpenCode provider | Source |
 | --- | --- |

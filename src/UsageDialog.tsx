@@ -1,8 +1,19 @@
 /** @jsxImportSource @opentui/solid */
 import { For, Show } from "solid-js";
 
+import type { IntegrationRef } from "./detection.ts";
 import type { UsageWindow } from "./http.ts";
-import { type Level, type ProviderKind, formatPercent, formatReset, level, usageBar } from "./usage.ts";
+import type { LocalWindow } from "./localUsage.ts";
+import {
+	type Level,
+	type ProviderKind,
+	formatCost,
+	formatPercent,
+	formatReset,
+	formatTokens,
+	level,
+	usageBar,
+} from "./usage.ts";
 
 const MIN_LABEL_WIDTH = 3;
 
@@ -13,7 +24,8 @@ export interface UsageDialogEntry {
 
 export interface UsageDialogProps {
 	readonly providers: readonly ProviderKind[];
-	readonly others: () => readonly string[];
+	readonly locals: () => readonly IntegrationRef[];
+	readonly localEntry: (id: string) => readonly LocalWindow[] | undefined;
 	readonly current: () => ProviderKind | undefined;
 	readonly entry: (kind: ProviderKind) => UsageDialogEntry | undefined;
 	readonly now: () => number;
@@ -33,6 +45,12 @@ export function UsageDialog(props: UsageDialogProps) {
 	// Largura do maior rótulo visível, para alinhar as barras entre todos os providers.
 	const labelWidth = () =>
 		Math.max(MIN_LABEL_WIDTH, ...props.providers.flatMap((kind) => (props.entry(kind)?.windows ?? []).map((w) => w.label.length)));
+
+	const localLine = (window: LocalWindow) => {
+		const parts = [`in ${formatTokens(window.input)}`, `out ${formatTokens(window.output)}`];
+		if (window.cost > 0) parts.push(formatCost(window.cost));
+		return parts.join(" · ");
+	};
 
 	return (
 		<box flexDirection="column" gap={1} paddingLeft={4} paddingRight={4} paddingBottom={1}>
@@ -78,8 +96,31 @@ export function UsageDialog(props: UsageDialogProps) {
 				}}
 			</For>
 
-			<Show when={props.others().length > 0}>
-				<text fg={props.faint}>{`Not measured: ${props.others().join(", ")}`}</text>
+			<Show when={props.locals().length > 0}>
+				<text fg={props.muted}>{"OpenCode usage"}</text>
+				<For each={props.locals()}>
+					{(integration) => {
+						const windows = () => props.localEntry(integration.id) ?? [];
+						return (
+							<box flexDirection="column">
+								<text fg={props.text}>{integration.label}</text>
+								<box flexDirection="column" paddingLeft={2}>
+									<For each={windows()}>
+										{(window) => (
+											<box flexDirection="row" gap={2}>
+												<text fg={props.faint}>{window.label.padEnd(MIN_LABEL_WIDTH)}</text>
+												<text fg={props.text}>{localLine(window)}</text>
+											</box>
+										)}
+									</For>
+									<Show when={windows().length === 0}>
+										<text fg={props.faint}>{"no local usage"}</text>
+									</Show>
+								</box>
+							</box>
+						);
+					}}
+				</For>
 			</Show>
 		</box>
 	);

@@ -17,6 +17,23 @@ const INTEGRATION_LABELS: Record<string, string> = {
 	zai: "Z.AI",
 };
 
+export interface IntegrationRef {
+	/** ID da integração, usado para casar com o `providerID` dos modelos. */
+	readonly id: string;
+	readonly label: string;
+}
+
+/** Integrações conectadas que não têm endpoint de cota no plugin (medidas pelo consumo local). */
+export function unmeasuredIntegrations(credentials: readonly { integrationID: string; active: boolean }[]): IntegrationRef[] {
+	const seen = new Map<string, IntegrationRef>();
+	for (const entry of credentials) {
+		if (!entry.active || MEASURED_INTEGRATIONS.has(entry.integrationID)) continue;
+		if (seen.has(entry.integrationID)) continue;
+		seen.set(entry.integrationID, { id: entry.integrationID, label: INTEGRATION_LABELS[entry.integrationID] ?? entry.integrationID });
+	}
+	return [...seen.values()].sort((left, right) => left.label.localeCompare(right.label));
+}
+
 const DETECTORS: Record<ProviderKind, (source?: CredentialSource) => Promise<boolean>> = {
 	Claude: async (source) => (await claudeTokens(source)).length > 0,
 	Codex: async (source) => (await codexCredentials(source)).length > 0,
@@ -29,12 +46,4 @@ export async function detectProviders(source?: CredentialSource): Promise<Provid
 		PROVIDER_KINDS.map(async (kind) => ((await DETECTORS[kind](source)) ? kind : undefined)),
 	);
 	return detected.filter((kind): kind is ProviderKind => kind !== undefined);
-}
-
-/** Integrações conectadas que não têm medição de uso no plugin. */
-export function unmeasuredIntegrations(credentials: readonly { integrationID: string; active: boolean }[]): string[] {
-	const ids = credentials
-		.filter((entry) => entry.active && !MEASURED_INTEGRATIONS.has(entry.integrationID))
-		.map((entry) => INTEGRATION_LABELS[entry.integrationID] ?? entry.integrationID);
-	return [...new Set(ids)].sort();
 }

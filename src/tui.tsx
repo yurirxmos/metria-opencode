@@ -6,8 +6,9 @@ import { Plugin } from "@opencode/plugin/tui";
 import { Show, createMemo, createSignal } from "solid-js";
 
 import { serverCredentials } from "./credentials.ts";
-import { detectProviders, unmeasuredIntegrations } from "./detection.ts";
+import { type IntegrationRef, detectProviders, unmeasuredIntegrations } from "./detection.ts";
 import type { UsageWindow } from "./http.ts";
+import { fetchLocalUsage, type LocalWindow } from "./localUsage.ts";
 import { UsageDialog } from "./UsageDialog.tsx";
 import {
 	type Level,
@@ -145,13 +146,35 @@ export default Plugin.define({
 			high: color("high"),
 			exceeded: color("exceeded"),
 		};
-		const [otherProviders, setOtherProviders] = createSignal<string[]>([]);
+		const [localState, updateLocalState] = context.storage.memory<Record<string, readonly LocalWindow[]>>("local", { initial: {} });
+		const [otherProviders, setOtherProviders] = createSignal<IntegrationRef[]>([]);
 
-		async function loadOtherProviders() {
+		async function loadOtherProviders(): Promise<IntegrationRef[]> {
 			try {
-				setOtherProviders(unmeasuredIntegrations(await context.client.credential.list()));
+				const integrations = unmeasuredIntegrations(await context.client.credential.list());
+				setOtherProviders(integrations);
+				return integrations;
 			} catch {
 				setOtherProviders([]);
+				return [];
+			}
+		}
+
+		async function refreshLocal(integrations: readonly IntegrationRef[]) {
+			if (integrations.length === 0) return;
+			try {
+				const usage = await fetchLocalUsage(context.client);
+				updateLocalState((draft) => {
+					for (const integration of integrations) {
+						draft[integration.id] = usage[integration.id] ?? [];
+					}
+				});
+			} catch {
+				updateLocalState((draft) => {
+					for (const integration of integrations) {
+						if (!draft[integration.id]) draft[integration.id] = [];
+					}
+				});
 			}
 		}
 
@@ -166,11 +189,12 @@ export default Plugin.define({
 				return;
 			}
 
-			void loadOtherProviders();
+			const locals = await loadOtherProviders();
 			context.ui.dialog.show(() => (
 				<UsageDialog
 					providers={providers}
-					others={otherProviders}
+					locals={otherProviders}
+					localEntry={(id) => localState[id]}
 					current={currentKind}
 					entry={(kind) => state[kind]}
 					now={() => now()}
@@ -181,7 +205,10 @@ export default Plugin.define({
 				/>
 			));
 			// Sem toast aqui: cada provider já mostra o próprio erro dentro da janela.
-			await Promise.allSettled(providers.map((kind) => refresh(kind, true, false)));
+			await Promise.allSettled([
+				...providers.map((kind) => refresh(kind, true, false)),
+				refreshLocal(locals),
+			]);
 		}
 
 		context.keymap.layer(() => ({

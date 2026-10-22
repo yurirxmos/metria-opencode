@@ -1,6 +1,6 @@
 {
   "name": "metria-opencode",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "OpenCode V2 CLI plugin that shows the current AI provider usage (Claude, Codex, OpenCode Go) in the prompt footer, powered by Metria's usage logic.",
   "type": "module",
   "license": "MIT",

@@ -71,6 +71,18 @@ export function usageBar(percent: number, width = 14): string {
 	return "█".repeat(filled) + "░".repeat(width - filled);
 }
 
+/** Formata uma contagem de tokens de forma curta: 950 → "950", 1_234_000 → "1.2M". */
+export function formatTokens(tokens: number): string {
+	if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+	if (tokens >= 1_000) return `${Math.round(tokens / 1_000)}K`;
+	return `${Math.round(tokens)}`;
+}
+
+/** Formata um custo em dólares: 3.4 → "$3.40". */
+export function formatCost(cost: number): string {
+	return `$${cost.toFixed(2)}`;
+}
+
 export function formatReset(resetDate: string | null, now = Date.now()): string {
 	if (!resetDate) return "";
 	const ms = new Date(resetDate).getTime() - now;

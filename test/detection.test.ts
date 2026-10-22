@@ -13,11 +13,16 @@ describe("unmeasured integrations", () => {
 			{ integrationID: "xai", active: true },
 			{ integrationID: "zai", active: false },
 		]);
-		expect(others).toEqual(["Google", "xAI"]);
+		expect(others).toEqual([
+			{ id: "google", label: "Google" },
+			{ id: "xai", label: "xAI" },
+		]);
 	});
 
 	it("uses readable names for known integrations", () => {
-		expect(unmeasuredIntegrations([{ integrationID: "github-copilot", active: true }])).toEqual(["GitHub Copilot"]);
+		expect(unmeasuredIntegrations([{ integrationID: "github-copilot", active: true }])).toEqual([
+			{ id: "github-copilot", label: "GitHub Copilot" },
+		]);
 	});
 
 	it("does not repeat the same integration", () => {
@@ -25,6 +30,6 @@ describe("unmeasured integrations", () => {
 			{ integrationID: "google", active: true },
 			{ integrationID: "google", active: true },
 		]);
-		expect(others).toEqual(["Google"]);
+		expect(others).toEqual([{ id: "google", label: "Google" }]);
 	});
 });

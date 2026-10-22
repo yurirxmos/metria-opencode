@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parseClaudeUsage } from "../src/providers/claude.ts";
 import { parseCodexAuth, parseCodexUsage } from "../src/providers/codex.ts";
 import { parseOpenCodeGoUsage } from "../src/providers/opencodeGo.ts";
-import { formatReset, level, providerKind, resetLabel, summarize, usageBar } from "../src/usage.ts";
+import { formatCost, formatReset, formatTokens, level, providerKind, resetLabel, summarize, usageBar } from "../src/usage.ts";
 
 describe("parsers", () => {
 	it("parses Claude windows, primary first", () => {
@@ -84,5 +84,19 @@ describe("usage bar", () => {
 	it("clamps values outside 0-100", () => {
 		expect(usageBar(-20, 4)).toBe("░".repeat(4));
 		expect(usageBar(180, 4)).toBe("█".repeat(4));
+	});
+});
+
+describe("formatting", () => {
+	it("shortens token counts", () => {
+		expect(formatTokens(0)).toBe("0");
+		expect(formatTokens(950)).toBe("950");
+		expect(formatTokens(1234)).toBe("1K");
+		expect(formatTokens(1_200_000)).toBe("1.2M");
+	});
+
+	it("formats costs in dollars", () => {
+		expect(formatCost(0)).toBe("$0.00");
+		expect(formatCost(3.4)).toBe("$3.40");
 	});
 });
